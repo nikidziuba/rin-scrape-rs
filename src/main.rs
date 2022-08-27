@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::{thread, time};
-use thirtyfour::prelude::*;
-use thirtyfour;
+use thirtyfour::{*, prelude::*};
 use std::process::{Command, Stdio};
 use terminal_link::Link;
 use termimage;
@@ -10,6 +9,9 @@ use std::fs::File;
 use image::GenericImageView;
 use terminal_size::{Width, Height, terminal_size};
 use dotenv::dotenv;
+use select::document::Document;
+use select::predicate::Class;
+
 
 // A struct for storing link data (link:text)
 struct LinkText {
@@ -33,34 +35,39 @@ impl SteamInfo {
     fn title(&self) -> String { self.title.clone() }
 }
 
-// Used for downloading a file, in this case image and saving it to TEMP dir 
+// Clear the screen
+async fn clear() {
+    print!("\x1B[2J\x1B[1;1H");
+}
+
+// Used for downloading a file and saving it to TEMP dir 
 async fn download_file(url: &str, tmp_dir: &Path) -> PathBuf {
     
-    // Send a request for the image
-    let image = reqwest::get(url).await.expect("URL doesn't exist");
+    // Send a request for the file
+    let file = reqwest::get(url).await.expect("URL doesn't exist");
 
-    // Get file name of the image
-    let fname = image
+    // Get file name of the file
+    let fname = file
             .url()
             .path_segments()
             .and_then(|segments| segments.last())
             .and_then(|name| if name.is_empty() { None } else { Some(name) })
             .unwrap_or("tmp.bin");
 
-    // Full path of the downloaded image
-    let img_path = tmp_dir.join(fname);
+    // Full path of the downloaded file
+    let file_path = tmp_dir.join(fname);
 
 
 
 
     // Create th file
-    let mut dest = File::create(img_path.clone()).expect("Can't create file while downloading");
+    let mut dest = File::create(file_path.clone()).expect("Can't create file while downloading");
     // Get its contents from the link
-    let content =  image.bytes().await.expect("Couldn't get bytes");
+    let content =  file.bytes().await.expect("Couldn't get bytes");
     // And write them to the file
     dest.write_all(&content).expect("Cant copy file to destination");
 
-    return img_path //Return path of the file
+    return file_path //Return path of the file
 }
 
 // Show image to the terminal
@@ -129,10 +136,6 @@ async fn login(driver: &WebDriver, username: &str, password: &str) -> WebDriverR
 }
 
 
-// Clear the screen
-async fn clear() {
-    print!("\x1B[2J\x1B[1;1H");
-}
 
 // Print text to the terminal centered
 async fn center(text: &str, width: usize, len: usize) {
@@ -142,27 +145,27 @@ async fn center(text: &str, width: usize, len: usize) {
     println!("{}{}\n", " ".repeat( ( width - len  ) / 2 ) , text);
 }
 
-// Get information from steam store page
-async fn steam_info(url: &str, driver: &WebDriver) -> Result<SteamInfo, WebDriverError> {
-    driver.goto(url).await?;
+
+// Get info from steam page
+async fn steam_info(url: &str, tmp_dir: &Path) -> Result<SteamInfo, std::io::Error> {
+    // Download the page
+    let path = download_file(url, tmp_dir).await;
+    let file = std::fs::File::open(path).unwrap();
+    // Load it to the scraper
+    let doc = Document::from_read(file).unwrap();
     // Find the title
-    let title_result = driver.find(By::XPath("//*[@id=\"appHubAppName\"]")).await;
+    let title = doc
+        .find(Class("apphub_AppName"))
+        .next()
+        .unwrap()
+        .text();
 
-    let title: String;
-    // Check if the result is ok, when its not fallback to default text 
-    match title_result {
-        Ok(_) => title = title_result.unwrap().text().await?,
-        Err(_) => title = "Steam Link".to_string()
-    };
 
-    // Go back to the previous page
-    driver.back().await.unwrap();
-    // Return the Steam info
     return Ok(SteamInfo {
-        title
-    });
-  
+        title: title
+    })
 }
+
 // Search for the query
 async fn search(driver: &WebDriver, query: &str, tmp_dir: &Path, width: usize) -> WebDriverResult<()>{
     //Search for the query in text from first post of threads on SCS forum (id 22)
@@ -229,7 +232,7 @@ async fn search(driver: &WebDriver, query: &str, tmp_dir: &Path, width: usize) -
     println!("");
     // Print the steam links as hyperlinks
     for link in steam_links {
-        let title = steam_info(&link, driver).await?.title();
+        let title = steam_info(&link, tmp_dir).await?.title();
 
         center(
             &Link::new(&title, &link).to_string(),
@@ -258,7 +261,6 @@ async fn search(driver: &WebDriver, query: &str, tmp_dir: &Path, width: usize) -
 
     Ok(())
 }
-
 
 
 
@@ -307,6 +309,7 @@ async fn main() -> WebDriverResult<()> {
     
     // Login
     login(&driver, &name, &pswd).await?;
+
 
     // Search for query
     search(&driver, query, tmp_dir, width as usize).await?;
