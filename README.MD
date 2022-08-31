@@ -1,6 +1,6 @@
 # Rin Scraper
 
-This is a tool that scrapes cs.rin.ru SCS (Steam Content Sharing) forum for photos and links from game posts. The final idea is to create a auto-updater for games that don't have DRM other than the Steam one 
+This is a tool that scrapes cs.rin.ru SCS (Steam Content Sharing) forum for images and links from game posts. The final idea is to create a auto-updater for games that don't have DRM other than the Steam one 
 
 
 # Current Progress
@@ -35,11 +35,11 @@ See Rust documentation for more info
 
 # Prerequisites
 
- - A Modern Terminal supporting true color and hyperlinks
+ - A Modern Terminal supporting truescolor and hyperlinks
  - geckodriver in PATH (It is currently used for authorization, will probably be changed to HTTP requests
 
 # How does it look?
-Here's an example - output of "cargo run 1229490":
+Here's an example - output of "cargo run 427520":
 ![](/images/example.png)
  
 
