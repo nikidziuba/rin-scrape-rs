@@ -31,7 +31,7 @@ async fn main() -> WebDriverResult<()> {
 
     // Check if config is available 
     let cfg_opt = AppConfig::from_file(Path::new("./app.dat"));
-    let cfg = cfg_opt.clone().unwrap_or(AppConfig::empty());
+    let mut cfg = cfg_opt.clone().unwrap_or(AppConfig::empty());
 
     let (query, cfg_loaded) = match cfg_opt {
         Some(_) => {
@@ -90,7 +90,7 @@ async fn main() -> WebDriverResult<()> {
         let update = check_update(&s_res, &cfg);
         if let Some(updt) = update {
             if ask_update(&updt) {
-                download_update(&s_res, &updt, &driver).await;
+                download_update(&s_res, &updt, &mut cfg, &driver).await;
                 cfg.to_file(Path::new("./app.dat")).expect("Error while saving config to file: ");
             }
         }

@@ -137,7 +137,7 @@ pub fn ask_update(info: &Update) -> bool{
 	}
 }
 // Parse and download links, currently using JDownloader 2
-pub async fn download_update(res: &SearchResult, update: &Update, driver: &WebDriver) {
+pub async fn download_update(res: &SearchResult, update: &Update, cfg: &mut AppConfig, driver: &WebDriver) {
 	let dl_title = format!("{} | {}", update.to().title(), epoch_to_date(update.to().last_update()));
 	println!("Updating: {}", dl_title);
 	let mut dl_link = "".to_string();
@@ -188,7 +188,10 @@ pub async fn download_update(res: &SearchResult, update: &Update, driver: &WebDr
 		.spawn()
 		.unwrap();
 
-	
+	cfg.last_update_title = update.to().title();
+	cfg.last_update = update.to().last_update();
+	cfg.last_update_str = epoch_to_date(update.to().last_update());
+
 
 
 

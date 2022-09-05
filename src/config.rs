@@ -6,11 +6,11 @@ use crate::display::get_input;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AppConfig {
-    app_id : String,
-    path: String,
-    last_update: String, // epoch
-    last_update_title: String, //title
-    last_update_str: String // dd.mm.YYYY
+    pub app_id : String,
+    pub path: String,
+    pub last_update: String, // epoch
+    pub last_update_title: String, //title
+    pub last_update_str: String // dd.mm.YYYY
 }
 
 impl AppConfig {
