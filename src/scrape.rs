@@ -83,7 +83,7 @@ pub async fn browser_init() -> WebDriverResult<(WebDriver, Child)> {
     // Set the capabilities of Firefox
     let mut caps = DesiredCapabilities::firefox();
     caps.set_log_level(thirtyfour::common::capabilities::firefox::LogLevel::Fatal)?; // Disable non-fatal logs
-    // caps.set_headless()?; // Set as headless
+    caps.set_headless()?; // Set as headless
     caps.add("acceptInsecureCerts", true)?;
     
     // Connect to the browser
