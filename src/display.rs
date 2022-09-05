@@ -6,6 +6,8 @@ use terminal_size::{terminal_size, Width, Height};
 use std::path::PathBuf;
 use termimage;
 use image::GenericImageView;
+use crate::downloader::Update;
+use std::io::{stdin,stdout,Write};
 
 // 2 hyperlinks and lenghts of texts
 struct LinkPair {
@@ -27,8 +29,25 @@ impl LinkPair {
 
 }
 
+
+pub fn get_input(ask: &str) -> String {
+
+    let mut s=String::new();
+    print!("{}", ask);
+    let _=stdout().flush();
+    stdin().read_line(&mut s).expect("Did not enter a correct string");
+    if let Some('\n')=s.chars().next_back() {
+        s.pop();
+    }
+    if let Some('\r') = s.chars().next_back() {
+        s.pop();
+    }
+    s
+}
+
 // Convert epoch number to date in desired format
-pub async fn epoch_to_date(time: String) -> String {
+pub fn epoch_to_date(time: String) -> String {
+
     let timestamp = time.parse::<i64>().unwrap();
     
     
@@ -79,7 +98,7 @@ pub async fn show_image(url: &str, tmp_dir: &Path) {
 
 
 // Create a table line from two strings
-async fn table_line(s1: String, l1: usize, s2: String, l2: usize, width: usize, wall: String) -> String {
+fn table_line(s1: String, l1: usize, s2: String, l2: usize, width: usize, wall: String) -> String {
     
     // Padding used for centering
     let padding1 = (width - l1) / 2;
@@ -112,7 +131,7 @@ async fn link_table(steam_links: Vec<SteamInfo>, dl_links: Vec<LinkText>) {
         // If there is the same amount of links in both vectors ( most cases )
         true => {
             for i in 0..steam_links.len() {
-                let st_text = format!("{} | {}", &steam_links[i].title(), epoch_to_date(steam_links[i].last_update()).await);
+                let st_text = format!("{} | {}", &steam_links[i].title(), epoch_to_date(steam_links[i].last_update()));
                 let st_link = Link::new(&st_text, &steam_links[i].url()).to_string();
                 pairs.push(LinkPair::new(st_link, dl_links[i].to_hyper().to_string(), st_text.len(), dl_links[i].text().len()));
             }
@@ -122,20 +141,20 @@ async fn link_table(steam_links: Vec<SteamInfo>, dl_links: Vec<LinkText>) {
             match steam_links.len() > dl_links.len() {
                 true => {
                     for i in 0..dl_links.len() {
-                        let st_text = format!("{} | {}", &steam_links[i].title(), epoch_to_date(steam_links[i].last_update()).await);
+                        let st_text = format!("{} | {}", &steam_links[i].title(), epoch_to_date(steam_links[i].last_update()));
                         let st_link = Link::new(&st_text, &steam_links[i].url()).to_string();
                         pairs.push(LinkPair::new(st_link, dl_links[i].to_hyper().to_string(), st_text.len(), dl_links[i].text().len()));
 
                     }
                     for i in dl_links.len()..steam_links.len() {
-                        let st_text = format!("{} | {}", &steam_links[i].title(), epoch_to_date(steam_links[i].last_update()).await);
+                        let st_text = format!("{} | {}", &steam_links[i].title(), epoch_to_date(steam_links[i].last_update()));
                         let st_link = Link::new(&st_text, &steam_links[i].url()).to_string();
                         pairs.push(LinkPair::new(st_link, " ".to_string(), st_text.len(), " ".len()));
                     }
                 }
                 false => {
                     for i in 0..steam_links.len() {
-                        let st_text = format!("{} | {}", &steam_links[i].title(), epoch_to_date(steam_links[i].last_update()).await);
+                        let st_text = format!("{} | {}", &steam_links[i].title(), epoch_to_date(steam_links[i].last_update()));
                         let st_link = Link::new(&st_text, &steam_links[i].url()).to_string();
                         pairs.push(LinkPair::new(st_link, dl_links[i].to_hyper().to_string(), st_text.len(), dl_links[i].text().len()));
                     }
@@ -151,18 +170,18 @@ async fn link_table(steam_links: Vec<SteamInfo>, dl_links: Vec<LinkText>) {
     let corner = "+".to_string();
     let floor = "─".to_string();
     let wall = "|".to_string();
-    let width = terminal_size().unwrap().0.0 as usize / 2 - 1;
+    let width = terminal_size().unwrap().0.0 as usize / 2 - 2;
     // +───────+────────+
     let pause = format!("{corner}{ceil}{corner}{ceil}{corner}", ceil = floor.to_string().repeat(width)); 
     
     // Table headers
     let mut table = format!("{pause}\n{info}\n{pause}", 
-        info = table_line("Steam Links".to_string(), "Steam Links".len(), "Download Links".to_string(), "Download Links".len(), width, wall.clone()).await
+        info = table_line("Steam Links".to_string(), "Steam Links".len(), "Download Links".to_string(), "Download Links".len(), width, wall.clone())
     );
     // Createa a line for each pair
     for pair in pairs {
         table = format!("{table}\n{next_line}",
-        next_line = table_line(pair.link1(), pair.len1(), pair.link2(), pair.len2(), width, wall.clone()).await
+        next_line = table_line(pair.link1(), pair.len1(), pair.link2(), pair.len2(), width, wall.clone())
         );
     }
     // Add a 'floor' at the end
@@ -175,7 +194,37 @@ async fn link_table(steam_links: Vec<SteamInfo>, dl_links: Vec<LinkText>) {
 }
 
 
-async fn center(text: &str, width: usize, len: usize) {
+pub fn update_table(info: &Update) -> String{ // TODO: write a struct/funtion to create all tables instead of having two funcs for two tables
+     // Table Creation
+     let corner = "+".to_string();
+     let floor = "─".to_string();
+     let wall = "|".to_string();
+     let width = terminal_size().unwrap().0.0 as usize / 2 - 2;
+     // +───────+────────+
+     let pause = format!("{corner}{ceil}{corner}{ceil}{corner}", ceil = floor.to_string().repeat(width)); 
+
+      // Table headers
+    let mut table = format!("{pause}\n{info}\n{pause}", 
+    info = table_line("Current Version".to_string(), "Current Version".len(), "Available Version".to_string(), "Available Version".len(), width, wall.clone()));
+
+
+    let from = format!("{name} | {ver}", name = info.from().title(), ver = epoch_to_date(info.from().last_update()));
+    let to = format!("{name} | {ver}", name = info.to().title(), ver = epoch_to_date(info.to().last_update()));
+
+    table = format!("{table}\n{next_line}",
+        next_line = table_line(from.clone(), from.len(), to.clone(), to.len(), width, wall.clone())
+        );
+    
+    // Add a 'floor' at the end
+    table = format!("{table}\n{pause}");
+        
+
+    return table
+
+}
+
+
+pub fn center(text: &str, width: usize, len: usize) {
     // text: the text to print out
     // width: current width of the terminal
     // len: lenght of the text that you want to center, used to center the hyperlinks
@@ -184,7 +233,7 @@ async fn center(text: &str, width: usize, len: usize) {
 
 
 // Show info - this is the "main" function of file
-pub async fn show_info(info: SearchResult, tmp_dir: &Path) -> Result<(), std::io::Error>{
+pub async fn show_info(info: &SearchResult, tmp_dir: &Path) -> Result<(), std::io::Error>{
     let steam_links = info.steam_links();
     let dl_links = info.dl_links();
 
@@ -192,7 +241,7 @@ pub async fn show_info(info: SearchResult, tmp_dir: &Path) -> Result<(), std::io
     // Print the image
     show_image(&info.img_url(), tmp_dir).await;
     println!("");
-    center(&info.thread_info().to_hyper(), width, info.thread_info().text().len()).await;
+    center(&info.thread_info().to_hyper(), width, info.thread_info().text().len());
     println!("");
     link_table(steam_links, dl_links).await;
 

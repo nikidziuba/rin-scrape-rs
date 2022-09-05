@@ -37,9 +37,22 @@ See Rust documentation for more info
 
  - A Modern Terminal supporting truescolor and hyperlinks
  - geckodriver in PATH (It is currently used for authorization, will probably be changed to HTTP requests
+ - JDownloader 2 installed and prefferably with JD2_HOME env variable added
 
 # How does it look?
 Here's an example - output of "cargo run 427520":
 ![](/images/example.png)
  
 
+# How to use the auto-updater
+
+First create a config:
+
+    rin_scraper.exe createconfig
+
+After that go the path where the config was saved and run:
+
+    rin_scraper.exe
+The program will automatically detect the config file and check for updates.
+## Warning:
+The download is currently done by adding links to JDownloader 2's LinkGrabber, you have to start the download manually and unpack it

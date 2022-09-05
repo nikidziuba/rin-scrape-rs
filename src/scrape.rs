@@ -74,7 +74,7 @@ impl LinkText {
 }
 
 
-
+// Initialize the WebDriver
 pub async fn browser_init() -> WebDriverResult<(WebDriver, Child)> {
     let selenium = Command::new("geckodriver.exe")
         .stdout(Stdio::null())//disable output from the child
@@ -83,7 +83,7 @@ pub async fn browser_init() -> WebDriverResult<(WebDriver, Child)> {
     // Set the capabilities of Firefox
     let mut caps = DesiredCapabilities::firefox();
     caps.set_log_level(thirtyfour::common::capabilities::firefox::LogLevel::Fatal)?; // Disable non-fatal logs
-    caps.set_headless()?; // Set as headless
+    // caps.set_headless()?; // Set as headless
     caps.add("acceptInsecureCerts", true)?;
     
     // Connect to the browser
@@ -196,15 +196,6 @@ pub async fn search(driver: &WebDriver, query: &str) -> WebDriverResult<SearchRe
 
 
 
-
-
-
-// Print text to the terminal centered
-
-
-
-
-
 // Used for downloading a file and saving it to TEMP dir 
 pub async fn download_file(url: &str, tmp_dir: &Path) -> PathBuf {
 
@@ -254,7 +245,7 @@ async fn steam_info(url: &str) -> Result<SteamInfo, std::io::Error> {
 
 
 
-    let title = parsed["data"][appid]["common"]["name"].to_string();  
+    let title = strip_f_l(parsed["data"][appid]["common"]["name"].to_string());  
     
     let mut last_update = "0".to_string();
 
